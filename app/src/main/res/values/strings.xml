@@ -1,0 +1,37 @@
+<resources>
+    <string name="app_name">MobiComp</string>
+    <string name="log_in">Login</string>
+    <string name="sign_up">Sign Up</string>
+    <string name="title_activity_login">LoginActivity</string>
+    <string name="login_data">Username or Email</string>
+    <string name="login_password">Password</string>
+    <string name="remember_me">Remember Me</string>
+    <string name="title_activity_signup">SignupActivity</string>
+    <string name="sign_up_username">Give Username</string>
+    <string name="sign_up_email">Give Email</string>
+    <string name="sign_up_password">Choose Password</string>
+    <string name="username">Username</string>
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+    <string name="title_activity_message">MessageActivity</string>
+    <string name="messages">Messages</string>
+    <string name="my_profile">My Profile</string>
+    <string name="edit_profile">Edit Profile</string>
+    <string name="log_out">Log Out</string>
+    <string name="title_activity_profile">ProfileActivity</string>
+    <string name="change_password">Change Password</string>
+    <string name="old_password">Old Password</string>
+    <string name="new_password">New Password</string>
+    <string name="confirm_password">Confirm New Password</string>
+    <string name="save_change">Save Changes</string>
+    <string name="cancel_change">Cancel Changes</string>
+    <string name="title_activity_main2">MainActivity</string>
+
+    <integer-array name="profile_pics">
+        <item>@drawable/baseline_account_box_24</item>
+        <item>@drawable/baseline_anchor_24</item>
+        <item>@drawable/baseline_donut_large_24</item>
+        <item>@drawable/baseline_group_work_24</item>
+        <item>@drawable/baseline_support_24</item>
+    </integer-array>
+</resources>

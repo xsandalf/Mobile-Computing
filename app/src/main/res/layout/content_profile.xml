@@ -1,0 +1,272 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/colorPrimary"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+    <ImageView
+            android:id="@+id/profilePic"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:layout_marginTop="12dp"
+            android:src="@mipmap/ic_launcher"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toTopOf="parent"/>
+
+    <ImageView
+            android:id="@+id/pfpChoice1"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:layout_marginTop="12dp"
+            android:layout_marginStart="10dp"
+            android:layout_marginEnd="10dp"
+            android:tag="0"
+            android:src="@drawable/baseline_account_box_24"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toLeftOf="@id/pfpChoice2"
+            app:layout_constraintTop_toTopOf="parent"
+            android:visibility="invisible"/>
+
+    <ImageView
+            android:id="@+id/pfpChoice2"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:layout_marginTop="12dp"
+            android:layout_marginStart="10dp"
+            android:layout_marginEnd="10dp"
+            android:tag="1"
+            android:src="@drawable/baseline_anchor_24"
+            app:layout_constraintLeft_toRightOf="@id/pfpChoice1"
+            app:layout_constraintRight_toLeftOf="@id/pfpChoice3"
+            app:layout_constraintTop_toTopOf="parent"
+            android:visibility="invisible"/>
+
+    <ImageView
+            android:id="@+id/pfpChoice3"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:layout_marginTop="12dp"
+            android:layout_marginStart="10dp"
+            android:layout_marginEnd="10dp"
+            android:tag="2"
+            android:src="@drawable/baseline_donut_large_24"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            android:visibility="invisible"/>
+
+    <ImageView
+            android:id="@+id/pfpChoice4"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:layout_marginTop="12dp"
+            android:layout_marginStart="10dp"
+            android:layout_marginEnd="10dp"
+            android:tag="3"
+            android:src="@drawable/baseline_group_work_24"
+            app:layout_constraintLeft_toRightOf="@id/pfpChoice3"
+            app:layout_constraintRight_toLeftOf="@id/pfpChoice5"
+            app:layout_constraintTop_toTopOf="parent"
+            android:visibility="invisible"/>
+
+    <ImageView
+            android:id="@+id/pfpChoice5"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:layout_marginTop="12dp"
+            android:layout_marginStart="10dp"
+            android:layout_marginEnd="10dp"
+            android:tag="4"
+            android:src="@drawable/baseline_support_24"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintLeft_toRightOf="@id/pfpChoice4"
+            app:layout_constraintTop_toTopOf="parent"
+            android:visibility="invisible"/>
+
+    <TextView
+            android:id="@+id/username"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/username"
+            android:textSize="20sp"
+            android:textColor="@color/colorPrimaryDark"
+            android:layout_marginTop="6dp"
+            android:layout_marginStart="24dp"
+            android:layout_marginEnd="24dp"
+            app:layout_constraintLeft_toLeftOf="@id/profilePic"
+            app:layout_constraintRight_toRightOf="@id/profilePic"
+            app:layout_constraintTop_toBottomOf="@id/profilePic"/>
+
+    <EditText
+            android:id="@+id/profileUsername"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:hint="@string/sign_up_username"
+            android:layout_marginTop="0dp"
+            app:layout_constraintLeft_toLeftOf="@+id/username"
+            app:layout_constraintRight_toRightOf="@+id/username"
+            app:layout_constraintTop_toBottomOf="@+id/username"
+            android:inputType="none"
+            android:enabled="false"/>
+
+    <TextView
+            android:id="@+id/email"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="@string/email"
+            android:textSize="20sp"
+            android:textColor="@color/colorPrimaryDark"
+            android:layout_marginTop="6dp"
+            app:layout_constraintLeft_toLeftOf="@+id/profileUsername"
+            app:layout_constraintRight_toRightOf="@+id/profileUsername"
+            app:layout_constraintTop_toBottomOf="@+id/profileUsername"/>
+
+    <EditText
+            android:id="@+id/profileEmail"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:hint="@string/sign_up_email"
+            android:layout_marginTop="0dp"
+            app:layout_constraintLeft_toLeftOf="@id/email"
+            app:layout_constraintRight_toRightOf="@id/email"
+            app:layout_constraintTop_toBottomOf="@id/email"
+            android:inputType="none"
+            android:enabled="false"/>
+
+    <TextView
+            android:id="@+id/changePassword"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="@string/change_password"
+            android:textSize="20sp"
+            android:textColor="@color/colorPrimaryDark"
+            android:layout_marginTop="8dp"
+            app:layout_constraintLeft_toLeftOf="@+id/profileEmail"
+            app:layout_constraintRight_toRightOf="@+id/profileEmail"
+            app:layout_constraintTop_toBottomOf="@+id/profileEmail"
+            android:visibility="invisible" />
+
+    <TextView
+            android:id="@+id/oldPassword"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="@string/old_password"
+            android:textSize="20sp"
+            android:textColor="@color/colorPrimaryDark"
+            android:layout_marginTop="0dp"
+            app:layout_constraintLeft_toLeftOf="@+id/changePassword"
+            app:layout_constraintRight_toRightOf="@+id/changePassword"
+            app:layout_constraintTop_toBottomOf="@+id/changePassword"
+            android:visibility="invisible" />
+
+    <EditText
+            android:id="@+id/oldProfilePassword"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:hint="@string/sign_up_password"
+            android:layout_marginTop="0dp"
+            app:layout_constraintLeft_toLeftOf="@id/oldPassword"
+            app:layout_constraintRight_toRightOf="@id/oldPassword"
+            app:layout_constraintTop_toBottomOf="@id/oldPassword"
+            android:visibility="invisible"
+            android:inputType="textPassword" />
+
+    <TextView
+            android:id="@+id/newPassword"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="@string/new_password"
+            android:textSize="20sp"
+            android:textColor="@color/colorPrimaryDark"
+            android:layout_marginTop="4dp"
+            app:layout_constraintLeft_toLeftOf="@+id/oldProfilePassword"
+            app:layout_constraintRight_toRightOf="@+id/oldProfilePassword"
+            app:layout_constraintTop_toBottomOf="@+id/oldProfilePassword"
+            android:visibility="invisible" />
+
+    <EditText
+            android:id="@+id/newProfilePassword"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:hint="@string/sign_up_password"
+            android:layout_marginTop="0dp"
+            app:layout_constraintLeft_toLeftOf="@id/newPassword"
+            app:layout_constraintRight_toRightOf="@id/newPassword"
+            app:layout_constraintTop_toBottomOf="@id/newPassword"
+            android:visibility="invisible"
+            android:inputType="textPassword" />
+
+    <TextView
+            android:id="@+id/confirmPassword"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="@string/confirm_password"
+            android:textSize="20sp"
+            android:textColor="@color/colorPrimaryDark"
+            android:layout_marginTop="4dp"
+            app:layout_constraintLeft_toLeftOf="@+id/newProfilePassword"
+            app:layout_constraintRight_toRightOf="@+id/newProfilePassword"
+            app:layout_constraintTop_toBottomOf="@+id/newProfilePassword"
+            android:visibility="invisible" />
+
+    <EditText
+            android:id="@+id/confirmProfilePassword"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:hint="@string/sign_up_password"
+            android:layout_marginTop="0dp"
+            app:layout_constraintLeft_toLeftOf="@id/confirmPassword"
+            app:layout_constraintRight_toRightOf="@id/confirmPassword"
+            app:layout_constraintTop_toBottomOf="@id/confirmPassword"
+            android:visibility="invisible"
+            android:inputType="textPassword" />
+
+    <Button
+            android:id="@+id/editProfile"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:background="@color/colorAccent"
+            android:text="@string/edit_profile"
+            android:textSize="20sp"
+            android:layout_marginTop="20dp"
+            android:layout_marginStart="24dp"
+            android:layout_marginEnd="24dp"
+            app:layout_constraintTop_toBottomOf="@id/profileEmail"
+            app:layout_constraintLeft_toLeftOf="@id/profileEmail"
+            app:layout_constraintRight_toRightOf="@id/profileEmail"/>
+
+    <Button
+            android:id="@+id/saveChange"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:background="@color/colorAccent"
+            android:text="@string/save_change"
+            android:textSize="20sp"
+            android:layout_marginTop="20dp"
+            android:layout_marginStart="12dp"
+            android:layout_marginEnd="6dp"
+            app:layout_constraintTop_toBottomOf="@id/confirmProfilePassword"
+            app:layout_constraintLeft_toRightOf="@id/cancelChange"
+            app:layout_constraintRight_toRightOf="@id/confirmProfilePassword"
+            android:visibility="invisible" />
+
+    <Button
+            android:id="@+id/cancelChange"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:background="@color/colorAccent"
+            android:text="@string/cancel_change"
+            android:textSize="20sp"
+            android:layout_marginTop="20dp"
+            android:layout_marginStart="6dp"
+            android:layout_marginEnd="12dp"
+            app:layout_constraintTop_toBottomOf="@id/confirmProfilePassword"
+            app:layout_constraintRight_toLeftOf="@id/saveChange"
+            app:layout_constraintLeft_toLeftOf="@id/confirmProfilePassword"
+            android:visibility="invisible" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

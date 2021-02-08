@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:app="http://schemas.android.com/apk/res-auto"
+        xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/profile"
+            android:icon="@mipmap/ic_launcher"
+            android:title="@string/edit_profile"
+            app:showAsAction="never" />
+    <item android:id="@+id/logOut"
+            android:icon="@drawable/ic_launcher_foreground"
+            android:title="@string/log_out"
+            app:showAsAction="never" />
+</menu>
