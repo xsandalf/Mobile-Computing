@@ -24,7 +24,7 @@ class ProfileActivity : AppCompatActivity() {
         val db = MainActivity.DatabaseUtils.getDatabase(this)
 
         // Get current user
-        var currentUser : MainActivity.User = LoginActivity.currentUser.getCurrentUser()
+        var currentUser : MainActivity.User = LoginActivity.CurrentUser.getCurrentUser()
         chosenPfp = currentUser.picId
 
         // Initiate views
@@ -134,7 +134,7 @@ class ProfileActivity : AppCompatActivity() {
                                 chosenPfp
                             )
                             currentUser = users.findByUid(currentUser.uid)
-                            LoginActivity.currentUser.updateUser(currentUser)
+                            LoginActivity.CurrentUser.updateUser(currentUser)
                             isSuccess = true
                             isReady = true
                         }
@@ -150,7 +150,7 @@ class ProfileActivity : AppCompatActivity() {
                                 chosenPfp
                             )
                             currentUser = users.findByUid(currentUser.uid)
-                            LoginActivity.currentUser.updateUser(currentUser)
+                            LoginActivity.CurrentUser.updateUser(currentUser)
                             isSuccess = true
                             isReady = true
                         }

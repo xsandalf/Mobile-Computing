@@ -1,4 +1,6 @@
 <resources>
+    <string name="google_maps_key">AIzaSyDF4plPJYHDvqqpEh0057mK85D0COblHvY</string>
+
     <string name="app_name">MobiComp</string>
     <string name="log_in">Login</string>
     <string name="sign_up">Sign Up</string>
@@ -26,6 +28,28 @@
     <string name="save_change">Save Changes</string>
     <string name="cancel_change">Cancel Changes</string>
     <string name="title_activity_main2">MainActivity</string>
+    <string name="create_new_reminder">Create New Reminder</string>
+    <string name="create">Create</string>
+    <string name="cancel">Cancel</string>
+    <string name="set">Set</string>
+    <string name="message">Message</string>
+    <string name="reminder_date_time">Set Reminder Date &amp; Time</string>
+    <string name="choose_date">Choose Date</string>
+    <string name="choose_time">Choose Time</string>
+    <string name="date_format">%1$02d/%2$02d/%3$d</string>
+    <string name="time_format">%1$02d:%2$02d</string>
+    <string name="reminder_icon">Choose Icon</string>
+    <string name="take_pic">Take Picture</string>
+    <string name="reminder_location">Choose Location</string>
+    <string name="location_format">%1$02.04f : %2$02.04f</string>
+    <string name="chosen_location">Chosen location</string>
+    <string name="create_calendar_event">Create Calendar Event</string>
+    <string name="location_format2">Lat: %1$02.04f, Long: %2$02.04f</string>
+    <string name="creation_format">Date Created: %1s</string>
+    <string name="reminder_format">Reminder Date: %1s</string>
+    <string name="edit">Edit</string>
+    <string name="delete">Delete</string>
+    <string name="edit_reminder">Edit Reminder</string>
 
     <integer-array name="profile_pics">
         <item>@drawable/baseline_account_box_24</item>
@@ -33,5 +57,27 @@
         <item>@drawable/baseline_donut_large_24</item>
         <item>@drawable/baseline_group_work_24</item>
         <item>@drawable/baseline_support_24</item>
+    </integer-array>
+
+    <integer-array name="reminder_icons">
+        <item>@drawable/baseline_accessibility_24</item>
+        <item>@drawable/baseline_account_balance_24</item>
+        <item>@drawable/baseline_add_shopping_cart_24</item>
+        <item>@drawable/baseline_alarm_24</item>
+        <item>@drawable/baseline_assignment_24</item>
+        <item>@drawable/baseline_calendar_today_24</item>
+        <item>@drawable/baseline_card_travel_24</item>
+        <item>@drawable/baseline_commute_24</item>
+        <item>@drawable/baseline_credit_card_24</item>
+        <item>@drawable/baseline_delete_24</item>
+        <item>@drawable/baseline_eco_24</item>
+        <item>@drawable/baseline_explore_24</item>
+        <item>@drawable/baseline_favorite_24</item>
+        <item>@drawable/baseline_home_24</item>
+        <item>@drawable/baseline_print_24</item>
+        <item>@drawable/baseline_savings_24</item>
+        <item>@drawable/baseline_shopping_cart_24</item>
+        <item>@drawable/baseline_tour_24</item>
+        <item>@drawable/baseline_work_24</item>
     </integer-array>
 </resources>

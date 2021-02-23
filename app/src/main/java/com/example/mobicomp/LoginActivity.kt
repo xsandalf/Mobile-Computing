@@ -69,7 +69,7 @@ class LoginActivity : AppCompatActivity() {
                     if (userName != null) {
                         // Implement password hashing later
                         if (userName!!.password == loginPassword.text.toString()) {
-                            currentUser.initUser(userName!!)
+                            CurrentUser.initUser(userName!!)
                             val intent = Intent(this, MessageActivity::class.java)
                             intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                             intent.apply {
@@ -86,7 +86,7 @@ class LoginActivity : AppCompatActivity() {
                     } else if (email != null) {
                         // Implement password hashing later
                         if (email!!.password == loginPassword.text.toString()) {
-                            currentUser.initUser(email!!)
+                            CurrentUser.initUser(email!!)
                             val intent = Intent(this, MessageActivity::class.java)
                             intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                             intent.apply {
@@ -112,8 +112,8 @@ class LoginActivity : AppCompatActivity() {
         }
     }
 
-    object currentUser {
-        lateinit var currentUser : MainActivity.User
+    object CurrentUser {
+        private lateinit var currentUser : MainActivity.User
         fun initUser(user : MainActivity.User) {
             currentUser = user
         }

@@ -1,10 +1,15 @@
 package com.example.mobicomp
 
+import android.Manifest
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Bundle
+import android.util.Log
 import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.room.*
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -14,6 +19,20 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        // I could chain all these together put it is hard to read, so I'm keeping them separate
+        // Ask Location permissions
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), 1)
+        }
+        // Ask Calendar permissions
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CALENDAR) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.READ_CALENDAR), 1)
+        }
+        // Ask Calendar permissions
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_CALENDAR) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.WRITE_CALENDAR), 1)
+        }
 
         // Set onClickListeners for buttons
         val logInButton : Button = findViewById(R.id.logIn)
@@ -95,12 +114,12 @@ class MainActivity : AppCompatActivity() {
     // No idea if this is the best method, but the interface isn't very good
     // and I don't have time to spend figuring it out
     object DatabaseUtils {
-        var db : AppDatabase? = null
+        private var db : AppDatabase? = null
         fun getDatabase(context: Context): AppDatabase? {
             if (db == null) {
                 db = Room.databaseBuilder(
                     context,
-                    AppDatabase::class.java, "database-name"
+                    AppDatabase::class.java, "User-Database"
                 ).build()
             }
             return db
