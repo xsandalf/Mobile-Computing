@@ -23,7 +23,8 @@ class MainActivity : AppCompatActivity() {
         // I could chain all these together put it is hard to read, so I'm keeping them separate
         // Ask Location permissions
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), 1)
+            // ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), 1)
+            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission_group.LOCATION), 1)
         }
         // Ask Calendar permissions
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CALENDAR) != PackageManager.PERMISSION_GRANTED) {

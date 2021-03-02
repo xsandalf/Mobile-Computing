@@ -1,7 +1,9 @@
 package com.example.mobicomp
 
+import android.annotation.SuppressLint
 import android.content.*
 import android.graphics.BitmapFactory
+import android.location.Location
 import android.os.Bundle
 import android.util.Log
 import android.view.*
@@ -10,6 +12,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.room.*
 import androidx.room.Entity
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -21,7 +25,10 @@ import kotlin.collections.ArrayList
 class MessageActivity : AppCompatActivity() {
 
     lateinit var listView : ListView
+    lateinit var showAll : CheckBox
+    private lateinit var fusedLocationClient: FusedLocationProviderClient
 
+    @SuppressLint("MissingPermission")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_message)
@@ -41,11 +48,28 @@ class MessageActivity : AppCompatActivity() {
             Log.d("lol", "stuck")
         }
 
-        listView= findViewById(R.id.message_list)
+        listView = findViewById(R.id.message_list)
         this.registerForContextMenu(listView)
         listView.adapter = ReminderAdapter(this,
             reminders?.toMutableList() as ArrayList<Reminder>
         )
+
+        showAll = findViewById(R.id.showAll)
+        showAll.setOnCheckedChangeListener { _,b ->
+            (listView.adapter as ReminderAdapter).isChecked = b
+            (listView.adapter as ReminderAdapter).notifyDataSetChanged()
+        }
+
+        // Initialise location client
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+
+        fusedLocationClient.lastLocation.addOnSuccessListener { location: Location? ->
+            // Real phone, might return null
+            if (location != null) {
+                (listView.adapter as ReminderAdapter).location_y = location.latitude
+                (listView.adapter as ReminderAdapter).location_x = location.longitude
+            }
+        }
 
         // Set onClickListeners for buttons
         val myProfileButton: Button = findViewById(R.id.my_profile)
@@ -181,11 +205,19 @@ class MessageActivity : AppCompatActivity() {
         return true
     }
 
+    @JvmName("getShowAll1")
+    fun getShowAll(): Boolean {
+        return showAll.isChecked
+    }
+
     class ReminderAdapter(val context: Context, private val list: ArrayList<Reminder>) : BaseAdapter() {
 
         private val layoutInflater: LayoutInflater = context.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
-        val currentUser : MainActivity.User = LoginActivity.CurrentUser.getCurrentUser()
-        val chosenPfp = currentUser.picId
+        private val currentUser : MainActivity.User = LoginActivity.CurrentUser.getCurrentUser()
+        private val chosenPfp = currentUser.picId
+        var isChecked = false
+        var location_y = 65.0464
+        var location_x = 25.4317
 
         override fun getCount(): Int {
             return list.size
@@ -206,6 +238,13 @@ class MessageActivity : AppCompatActivity() {
         override fun getView(p0: Int, p1: View?, p2: ViewGroup?): View {
             // Init views and set values from the reminder
             val reminder = list[p0]
+
+            var results = FloatArray(5)
+            Location.distanceBetween(location_y, location_x, reminder.location_y, reminder.location_x, results)
+
+            if (!isChecked && (reminder.reminder_time > System.currentTimeMillis() || results[0] > 50)) {
+                return View(context)
+            }
             val view = layoutInflater.inflate(R.layout.reminder_item, p2, false)
             val icon: ImageView = view.findViewById(R.id.icon)
             val pic: ImageView = view.findViewById(R.id.pic)

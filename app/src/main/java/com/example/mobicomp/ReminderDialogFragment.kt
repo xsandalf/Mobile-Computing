@@ -21,6 +21,10 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.fragment.app.DialogFragment
+import androidx.work.Data
+import androidx.work.ExistingWorkPolicy
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import kotlinx.coroutines.GlobalScope
@@ -29,6 +33,7 @@ import java.io.File
 import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.*
+import java.util.concurrent.TimeUnit
 
 
 class ReminderDialogFragment : DialogFragment() {
@@ -212,6 +217,9 @@ class ReminderDialogFragment : DialogFragment() {
                 calendarCheck.isChecked = true
             }
 
+            // Checkbox for choosing if notification is created
+            val notificationCheck : CheckBox = dialogView.findViewById(R.id.reminderNotification)
+
             // Set custom view and create/cancel buttons
             builder.setView(dialogView)
                 .setPositiveButton(R.string.create) { _, _ ->
@@ -264,6 +272,19 @@ class ReminderDialogFragment : DialogFragment() {
                             //createCalendarEvent()
                         }
                         requestCalendarSync()
+                    }
+
+                    // Queue notification
+                    if (editable) {
+                        if (notificationCheck.isChecked) {
+                            queueNotification(requireContext(), editReminder.creation_time, reminderTime, messageText.text.toString(),
+                                              getString(R.string.location_format2,MapsFragment.CurrentLocation.latitude, MapsFragment.CurrentLocation.longitude), iconSpinner.selectedItemPosition)
+                        } else {
+                            removeNotification(requireContext(), editReminder.creation_time)
+                        }
+                    } else if (notificationCheck.isChecked) {
+                            queueNotification(requireContext(), creationTime, reminderTime, messageText.text.toString(),
+                                              getString(R.string.location_format2,MapsFragment.CurrentLocation.latitude, MapsFragment.CurrentLocation.longitude), iconSpinner.selectedItemPosition)
                     }
 
                     // Store new reminder in to Room Database
@@ -334,6 +355,7 @@ class ReminderDialogFragment : DialogFragment() {
                         } else {
                             File(currentPhotoPath).delete()
                         }
+                        removeNotification(requireContext(), editReminder.creation_time)
                     }
                 }
 
@@ -348,7 +370,7 @@ class ReminderDialogFragment : DialogFragment() {
     private fun createImageFile(): File {
         // Create an image file name
         val timeStamp: String = SimpleDateFormat("yyyyMMdd_HHmmss").format(Date())
-        val storageDir: File = requireContext().getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+        val storageDir: File? = requireContext().getExternalFilesDir(Environment.DIRECTORY_PICTURES)
         return File.createTempFile(
             "JPEG_${timeStamp}_", /* prefix */
             ".jpg", /* suffix */
@@ -474,6 +496,30 @@ class ReminderDialogFragment : DialogFragment() {
                 ContentResolver.requestSync(accounts[0], CalendarContract.AUTHORITY, extras)
             }
         }
+    }
+
+    private fun queueNotification(context: Context, tag : Long, time : Long, message : String, location : String, icon : Int) {
+        val notificationParams = Data.Builder()
+            .putLong("time", time)
+            .putString("message", message)
+            .putString("location", location)
+            .putInt("icon", icon)
+            .build()
+
+        var notificationTime = 0L
+        if (time > System.currentTimeMillis())
+            notificationTime = time - System.currentTimeMillis()
+
+        val notificationRequest = OneTimeWorkRequestBuilder<NotificationWorker>()
+            .setInputData(notificationParams)
+            .setInitialDelay(notificationTime, TimeUnit.MILLISECONDS)
+            .build()
+
+        WorkManager.getInstance(context).enqueueUniqueWork(tag.toString(), ExistingWorkPolicy.REPLACE, notificationRequest)
+    }
+
+    private fun removeNotification(context: Context, tag: Long) {
+        WorkManager.getInstance(context).cancelAllWorkByTag(tag.toString())
     }
 
     fun setEditableReminder(reminder: MessageActivity.Reminder) {

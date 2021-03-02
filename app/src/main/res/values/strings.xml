@@ -1,5 +1,4 @@
 <resources>
-    <string name="google_maps_key">AIzaSyDF4plPJYHDvqqpEh0057mK85D0COblHvY</string>
 
     <string name="app_name">MobiComp</string>
     <string name="log_in">Login</string>
@@ -50,6 +49,8 @@
     <string name="edit">Edit</string>
     <string name="delete">Delete</string>
     <string name="edit_reminder">Edit Reminder</string>
+    <string name="create_notification">Create Notification</string>
+    <string name="show_all">Show All Reminders</string>
 
     <integer-array name="profile_pics">
         <item>@drawable/baseline_account_box_24</item>
