@@ -13,6 +13,7 @@ class NotificationWorker (appContext: Context, workerParams: WorkerParameters):
     Worker(appContext, workerParams) {
 
     override fun doWork(): Result {
+        Log.d("Tag", inputData.getLong("tag", 0L).toString())
         Log.d("Time", inputData.getLong("time", 0L).toString())
         Log.d("Message", inputData.getString("message"))
         Log.d("Location", inputData.getString("location"))
@@ -39,7 +40,7 @@ class NotificationWorker (appContext: Context, workerParams: WorkerParameters):
 
         // Publish notification
         with(NotificationManagerCompat.from(applicationContext)) {
-            notify(System.currentTimeMillis().toInt(), builder.build())
+            notify(inputData.getLong("tag", 0L).toInt(), builder.build())
         }
 
         return Result.success()

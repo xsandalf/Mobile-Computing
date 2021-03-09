@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.widget.Button
@@ -20,27 +21,86 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // I could chain all these together put it is hard to read, so I'm keeping them separate
+        // Create default user
+        var isReady = false
+        val db = DatabaseUtils.getDatabase(this)
+        val users = db?.userDao()
+        if (users != null) {
+            GlobalScope.launch {
+                if (users.findByUsername("root") == null) {
+                    users.insertAll(User(0, "root", "root", SignupActivity.hashPassword("root"), 0, 0))
+                }
+                isReady = true
+            }
+        }
+        while (!isReady) {
+            // Stupidest shit ever to wait for database like this but it works :D
+        }
+
+        // I could chain all these together but it is hard to read, so I'm keeping them separate
+        // I don't care if the user has to press allow multiple times
         // Ask Location permissions
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), 1)
-            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission_group.LOCATION), 1)
+        if (ContextCompat.checkSelfPermission(applicationContext, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), 123)
+        }
+        // Ask Location permissions
+        if (ContextCompat.checkSelfPermission(applicationContext, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION), 123)
+        }
+        // Ask Location permissions
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            if (ContextCompat.checkSelfPermission(applicationContext, Manifest.permission.ACCESS_BACKGROUND_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_BACKGROUND_LOCATION), 12345
+                )
+            }
         }
         // Ask Calendar permissions
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CALENDAR) != PackageManager.PERMISSION_GRANTED) {
+        if (ContextCompat.checkSelfPermission(applicationContext, Manifest.permission.READ_CALENDAR) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.READ_CALENDAR), 1)
         }
         // Ask Calendar permissions
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_CALENDAR) != PackageManager.PERMISSION_GRANTED) {
+        if (ContextCompat.checkSelfPermission(applicationContext, Manifest.permission.WRITE_CALENDAR) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.WRITE_CALENDAR), 1)
         }
 
         // Set onClickListeners for buttons
         val logInButton : Button = findViewById(R.id.logIn)
         logInButton.setOnClickListener {
-            // Change to login activity
-            val intent = Intent(this, LoginActivity::class.java).apply {
-                // Room for putExtra()
+            // Find if user has set RememberMe
+            isReady = false
+            var foundUser = false
+            Log.d("RememberMe1", (users == null).toString())
+            if (users != null) {
+                Log.d("RememberMe2", "Not Null")
+                GlobalScope.launch {
+                    val user = users.findRememberMe(1)
+                    if (user != null) {
+                        Log.d("RememberMe3", "Not Null")
+                        LoginActivity.CurrentUser.initUser(user)
+                        foundUser = true
+                    }
+                    isReady = true
+                }
+            }
+            while (!isReady) {
+                // Stupidest shit ever to wait for database like this but it works :D
+                Log.d("Stuck", "Stuck")
+            }
+            Log.d("RememberMe4", foundUser.toString())
+            lateinit var intent: Intent
+            if (foundUser) {
+                Log.d("RememberMe5", "Not Null")
+                // If user has set RememberMe, jump straight to MessageActivity
+                intent = Intent(this, MessageActivity::class.java)
+                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                intent.apply {
+                    // Room for putExtra()
+                }
+            } else {
+                // Change to login activity
+                intent = Intent(this, LoginActivity::class.java).apply {
+                    // Room for putExtra()
+                }
             }
             startActivity(intent)
         }
@@ -53,22 +113,6 @@ class MainActivity : AppCompatActivity() {
             }
             startActivity(intent)
         }
-
-        // Create default user
-        var isReady = false
-        val db = DatabaseUtils.getDatabase(this)
-        val users = db?.userDao()
-        if (users != null) {
-            GlobalScope.launch {
-                if (users.findByUsername("root") == null) {
-                    users.insertAll(User(0, "root", "root", "root", 0))
-                }
-                isReady = true
-            }
-        }
-        while (isReady) {
-            // Stupidest shit ever to wait for database like this but it works :D
-        }
     }
 
     @Entity
@@ -77,7 +121,8 @@ class MainActivity : AppCompatActivity() {
         @ColumnInfo(name = "username") val username: String,
         @ColumnInfo(name = "email") val email: String,
         @ColumnInfo(name = "password") val password: String,
-        @ColumnInfo(name = "pic_id") val picId: Int
+        @ColumnInfo(name = "pic_id") val picId: Int,
+        @ColumnInfo(name = "remember_me") val rememberMe: Int
     )
 
     @Dao
@@ -97,11 +142,14 @@ class MainActivity : AppCompatActivity() {
         @Query("SELECT * FROM user WHERE email LIKE :email LIMIT 1")
         fun findByEmail(email: String): User
 
+        @Query("SELECT * FROM user WHERE remember_me LIKE :rememberMe LIMIT 1")
+        fun findRememberMe(rememberMe: Int): User
+
         @Insert
         fun insertAll(vararg users: User)
 
-        @Query("UPDATE User SET username = :username, email = :email, password = :password, pic_id = :picId WHERE uid = :uid")
-        fun updateUser(uid: Int, username: String, email: String, password: String, picId: Int): Int
+        @Query("UPDATE User SET username = :username, email = :email, password = :password, pic_id = :picId, remember_me = :rememberMe WHERE uid = :uid")
+        fun updateUser(uid: Int, username: String, email: String, password: String, picId: Int, rememberMe: Int): Int
 
         @Delete
         fun delete(user: User)

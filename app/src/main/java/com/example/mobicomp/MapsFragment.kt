@@ -1,6 +1,7 @@
 package com.example.mobicomp
 
 import android.app.Dialog
+import android.graphics.Color
 
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -12,6 +13,7 @@ import androidx.fragment.app.DialogFragment
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.model.CircleOptions
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
 import kotlin.properties.Delegates
@@ -32,6 +34,8 @@ class MapsFragment : DialogFragment() {
          */
         val latLng = LatLng(CurrentLocation.latitude, CurrentLocation.longitude)
         var marker = googleMap.addMarker(MarkerOptions().position(latLng).title("Current location"))
+        var circle = googleMap.addCircle(CircleOptions().center(latLng).strokeColor(Color.argb(50, 70, 70, 70)).fillColor(Color.argb(70, 150, 150, 150)).radius(200.0)
+        )
         googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15f))
         googleMap.setOnMapLongClickListener {
             marker.remove()
@@ -39,6 +43,14 @@ class MapsFragment : DialogFragment() {
                 MarkerOptions().position(it).title(getString(R.string.chosen_location))
             )
             CurrentLocation.setLocation(it.latitude, it.longitude)
+            circle.remove()
+            circle = googleMap.addCircle(
+                CircleOptions()
+                    .center(it)
+                    .strokeColor(Color.argb(50, 70, 70, 70))
+                    .fillColor(Color.argb(70, 150, 150, 150))
+                    .radius(200.0)
+            )
         }
     }
 
@@ -52,7 +64,7 @@ class MapsFragment : DialogFragment() {
             val builder = AlertDialog.Builder(it)
 
             // Get layout inflater
-            val inflater = requireActivity().layoutInflater;
+            val inflater = requireActivity().layoutInflater
 
             // Set title
             builder.setTitle(R.string.reminder_location)

@@ -2,10 +2,7 @@ package com.example.mobicomp
 
 import android.content.Intent
 import android.os.Bundle
-import android.widget.Button
-import android.widget.EditText
-import android.widget.RadioButton
-import android.widget.Toast
+import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -27,7 +24,7 @@ class LoginActivity : AppCompatActivity() {
         val loginName : EditText = findViewById(R.id.loginName)
         val loginPassword : EditText = findViewById(R.id.loginPassword)
         // Implement functionality later
-        val rememberMe : RadioButton = findViewById(R.id.rememberMe)
+        val rememberMe : CheckBox = findViewById(R.id.rememberMe)
 
         // Get intent
         val intent : Bundle? = intent.extras
@@ -50,7 +47,7 @@ class LoginActivity : AppCompatActivity() {
                     Toast.LENGTH_SHORT
                 ).show()
             } else {
-                // Check for Remember Me (Implement later), Check from Database for valid login
+                // Check from Database for valid login
                 if (db != null) {
                     val users = db.userDao()
                     var userName : MainActivity.User? = null
@@ -67,13 +64,26 @@ class LoginActivity : AppCompatActivity() {
                     // null for invalid login, stupid but works
                     // Clean up later
                     if (userName != null) {
-                        // Implement password hashing later
-                        if (userName!!.password == loginPassword.text.toString()) {
+                        if (userName!!.password == SignupActivity.hashPassword(loginPassword.text.toString())) {
                             CurrentUser.initUser(userName!!)
                             val intent = Intent(this, MessageActivity::class.java)
                             intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                             intent.apply {
                                 // Room for putExtra()
+                            }
+                            if (rememberMe.isChecked) {
+                                isReady = false
+                                GlobalScope.launch {
+                                    val user = users.findRememberMe(1)
+                                    if (user != null) {
+                                        users.updateUser(user.uid, user.username, user.email, user.password, user.picId, 0)
+                                    }
+                                    users.updateUser(userName!!.uid, userName!!.username, userName!!.email, userName!!.password, userName!!.picId, 1)
+                                    isReady = true
+                                }
+                                while (!isReady) {
+                                    // Stupidest shit ever to wait for database like this but it works :D
+                                }
                             }
                             startActivity(intent)
                         } else {
@@ -84,13 +94,26 @@ class LoginActivity : AppCompatActivity() {
                             ).show()
                         }
                     } else if (email != null) {
-                        // Implement password hashing later
-                        if (email!!.password == loginPassword.text.toString()) {
+                        if (email!!.password == SignupActivity.hashPassword(loginPassword.text.toString())) {
                             CurrentUser.initUser(email!!)
                             val intent = Intent(this, MessageActivity::class.java)
                             intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                             intent.apply {
                                 // Room for putExtra()
+                            }
+                            if (rememberMe.isChecked) {
+                                isReady = false
+                                GlobalScope.launch {
+                                    val user = users.findRememberMe(1)
+                                    if (user != null) {
+                                        users.updateUser(user.uid, user.username, user.email, user.password, user.picId, 0)
+                                    }
+                                    users.updateUser(email!!.uid, email!!.username, email!!.email, email!!.password, email!!.picId, 1)
+                                    isReady = true
+                                }
+                                while (!isReady) {
+                                    // Stupidest shit ever to wait for database like this but it works :D
+                                }
                             }
                             startActivity(intent)
                         } else {

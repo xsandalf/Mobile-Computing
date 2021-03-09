@@ -3,6 +3,7 @@ package com.example.mobicomp
 import android.accounts.AccountManager
 import android.annotation.SuppressLint
 import android.app.Dialog
+import android.app.PendingIntent
 import android.content.*
 import android.graphics.BitmapFactory
 import android.location.Location
@@ -11,6 +12,7 @@ import android.os.Bundle
 import android.os.Environment
 import android.provider.CalendarContract
 import android.provider.MediaStore
+import android.provider.SyncStateContract
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -25,8 +27,8 @@ import androidx.work.Data
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
-import com.google.android.gms.location.FusedLocationProviderClient
-import com.google.android.gms.location.LocationServices
+import com.google.android.gms.common.internal.Constants
+import com.google.android.gms.location.*
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import java.io.File
@@ -36,11 +38,13 @@ import java.util.*
 import java.util.concurrent.TimeUnit
 
 
+
 class ReminderDialogFragment : DialogFragment() {
 
     private lateinit var reminderPic : ImageView
     private val REQUEST_IMAGE_CAPTURE = 1
     private lateinit var fusedLocationClient: FusedLocationProviderClient
+    private lateinit var geoFencingClient: GeofencingClient
     lateinit var currentPhotoPath : String
     private lateinit var onReminderChangedListener: OnReminderChangedListener
     private var editable = false
@@ -54,6 +58,9 @@ class ReminderDialogFragment : DialogFragment() {
 
             // Get layout inflater
             val inflater = requireActivity().layoutInflater;
+
+            // Get GeoFencing client
+            geoFencingClient = LocationServices.getGeofencingClient(requireActivity())
 
             // Set title
             if (editable) {
@@ -165,7 +172,8 @@ class ReminderDialogFragment : DialogFragment() {
                     editReminder.location_x
                 )
             } else {
-                MapsFragment.CurrentLocation.initLocation(65.0464, 25.4317)
+                // MapsFragment.CurrentLocation.initLocation(65.0464, 25.4317)
+                MapsFragment.CurrentLocation.initLocation(MessageActivity.CoronaLocation.lat, MessageActivity.CoronaLocation.long)
             }
             locationText.text = getString(
                 R.string.location_format,
@@ -181,6 +189,7 @@ class ReminderDialogFragment : DialogFragment() {
                         editReminder.location_x
                     )
                 } else if (location != null) {
+                    Log.d("Location", "Called")
                     MapsFragment.CurrentLocation.initLocation(
                         location.latitude,
                         location.longitude
@@ -190,6 +199,11 @@ class ReminderDialogFragment : DialogFragment() {
                         location.latitude,
                         location.longitude
                     )
+                // If location data is not available, use virtual location
+                } else {
+                    Log.d("Location", "Null")
+                    MapsFragment.CurrentLocation.initLocation(MessageActivity.CoronaLocation.lat, MessageActivity.CoronaLocation.long)
+                    locationText.text = getString(R.string.location_format, MessageActivity.CoronaLocation.lat, MessageActivity.CoronaLocation.long)
                 }
             }
 
@@ -285,6 +299,16 @@ class ReminderDialogFragment : DialogFragment() {
                     } else if (notificationCheck.isChecked) {
                             queueNotification(requireContext(), creationTime, reminderTime, messageText.text.toString(),
                                               getString(R.string.location_format2,MapsFragment.CurrentLocation.latitude, MapsFragment.CurrentLocation.longitude), iconSpinner.selectedItemPosition)
+                    }
+
+                    // Create Geofencing event
+                    if (editable) {
+                        removeGeofence(requireContext(), editReminder.creation_time.toString())
+                        queueGeofence(requireContext(), editReminder.creation_time, reminderTime, messageText.text.toString(),
+                                      getString(R.string.location_format2,MapsFragment.CurrentLocation.latitude, MapsFragment.CurrentLocation.longitude), iconSpinner.selectedItemPosition)
+                    } else {
+                        queueGeofence(requireContext(), creationTime, reminderTime, messageText.text.toString(),
+                            getString(R.string.location_format2,MapsFragment.CurrentLocation.latitude, MapsFragment.CurrentLocation.longitude), iconSpinner.selectedItemPosition)
                     }
 
                     // Store new reminder in to Room Database
@@ -498,28 +522,63 @@ class ReminderDialogFragment : DialogFragment() {
         }
     }
 
-    private fun queueNotification(context: Context, tag : Long, time : Long, message : String, location : String, icon : Int) {
-        val notificationParams = Data.Builder()
-            .putLong("time", time)
-            .putString("message", message)
-            .putString("location", location)
-            .putInt("icon", icon)
-            .build()
-
-        var notificationTime = 0L
-        if (time > System.currentTimeMillis())
-            notificationTime = time - System.currentTimeMillis()
-
-        val notificationRequest = OneTimeWorkRequestBuilder<NotificationWorker>()
-            .setInputData(notificationParams)
-            .setInitialDelay(notificationTime, TimeUnit.MILLISECONDS)
-            .build()
-
-        WorkManager.getInstance(context).enqueueUniqueWork(tag.toString(), ExistingWorkPolicy.REPLACE, notificationRequest)
-    }
-
     private fun removeNotification(context: Context, tag: Long) {
         WorkManager.getInstance(context).cancelAllWorkByTag(tag.toString())
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun queueGeofence(context: Context, tag : Long, time : Long, message : String, location : String, icon : Int) {
+        val geofence = Geofence.Builder()
+            .setRequestId(tag.toString())
+            .setCircularRegion(MapsFragment.CurrentLocation.latitude, MapsFragment.CurrentLocation.longitude, 200000.0f)
+            .setExpirationDuration((10 * 24 * 60 * 60 * 1000).toLong())
+            .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER or Geofence.GEOFENCE_TRANSITION_DWELL)
+            .setLoiteringDelay(10 * 1000)
+            .build()
+
+        val geofenceRequest = GeofencingRequest.Builder()
+            .setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER)
+            .addGeofence(geofence)
+            .build()
+
+        val intent = Intent(context, GeofenceReceiver::class.java).apply {
+            // Room for putExtra()
+            putExtra("tag", tag.toString())
+            putExtra("time", time)
+            putExtra("message", message)
+            putExtra("location", location)
+            putExtra("icon", icon)
+        }
+
+        val pendingIntent = PendingIntent.getBroadcast(requireContext(), 0, intent, PendingIntent.FLAG_UPDATE_CURRENT)
+        geoFencingClient.addGeofences(geofenceRequest, pendingIntent)
+    }
+
+    companion object {
+        fun removeGeofence(context: Context, id: String) {
+            LocationServices.getGeofencingClient(context).removeGeofences(mutableListOf(id))
+        }
+
+        fun queueNotification(context: Context, tag : Long, time : Long, message : String, location : String, icon : Int) {
+            val notificationParams = Data.Builder()
+                .putLong("tag", tag)
+                .putLong("time", time)
+                .putString("message", message)
+                .putString("location", location)
+                .putInt("icon", icon)
+                .build()
+
+            var notificationTime = 0L
+            if (time > System.currentTimeMillis())
+                notificationTime = time - System.currentTimeMillis()
+
+            val notificationRequest = OneTimeWorkRequestBuilder<NotificationWorker>()
+                .setInputData(notificationParams)
+                .setInitialDelay(notificationTime, TimeUnit.MILLISECONDS)
+                .build()
+
+            WorkManager.getInstance(context).enqueueUniqueWork(tag.toString(), ExistingWorkPolicy.REPLACE, notificationRequest)
+        }
     }
 
     fun setEditableReminder(reminder: MessageActivity.Reminder) {

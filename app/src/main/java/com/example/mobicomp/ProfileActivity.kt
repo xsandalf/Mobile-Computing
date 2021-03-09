@@ -131,14 +131,15 @@ class ProfileActivity : AppCompatActivity() {
                                 profileUsername.text.toString(),
                                 profileEmail.text.toString(),
                                 currentUser.password,
-                                chosenPfp
+                                chosenPfp,
+                                currentUser.rememberMe
                             )
                             currentUser = users.findByUid(currentUser.uid)
                             LoginActivity.CurrentUser.updateUser(currentUser)
                             isSuccess = true
                             isReady = true
                         }
-                    } else if (oldProfilePassword.text.toString() == currentUser.password
+                    } else if (SignupActivity.hashPassword(oldProfilePassword.text.toString()) == currentUser.password
                         && newProfilePassword.text.toString() == confirmProfilePassword.text.toString()
                         && confirmProfilePassword.text.toString() != "") {
                         if (users != null) {
@@ -146,8 +147,9 @@ class ProfileActivity : AppCompatActivity() {
                                 currentUser.uid,
                                 profileUsername.text.toString(),
                                 profileEmail.text.toString(),
-                                confirmProfilePassword.text.toString(),
-                                chosenPfp
+                                SignupActivity.hashPassword(confirmProfilePassword.text.toString()),
+                                chosenPfp,
+                                0
                             )
                             currentUser = users.findByUid(currentUser.uid)
                             LoginActivity.CurrentUser.updateUser(currentUser)

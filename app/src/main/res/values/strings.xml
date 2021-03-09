@@ -1,5 +1,4 @@
 <resources>
-
     <string name="app_name">MobiComp</string>
     <string name="log_in">Login</string>
     <string name="sign_up">Sign Up</string>
@@ -51,6 +50,7 @@
     <string name="edit_reminder">Edit Reminder</string>
     <string name="create_notification">Create Notification</string>
     <string name="show_all">Show All Reminders</string>
+    <string name="set_location">Set Location</string>
 
     <integer-array name="profile_pics">
         <item>@drawable/baseline_account_box_24</item>

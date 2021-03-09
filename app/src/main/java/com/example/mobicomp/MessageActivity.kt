@@ -1,6 +1,7 @@
 package com.example.mobicomp
 
 import android.annotation.SuppressLint
+import android.app.PendingIntent
 import android.content.*
 import android.graphics.BitmapFactory
 import android.location.Location
@@ -66,8 +67,12 @@ class MessageActivity : AppCompatActivity() {
         fusedLocationClient.lastLocation.addOnSuccessListener { location: Location? ->
             // Real phone, might return null
             if (location != null) {
-                (listView.adapter as ReminderAdapter).location_y = location.latitude
-                (listView.adapter as ReminderAdapter).location_x = location.longitude
+                Log.d("Location", "Called")
+                CoronaLocation.lat = location.latitude
+                CoronaLocation.long = location.longitude
+                (listView.adapter as ReminderAdapter).notifyDataSetChanged()
+            } else {
+                Log.d("Location", "Null")
             }
         }
 
@@ -87,7 +92,33 @@ class MessageActivity : AppCompatActivity() {
             val intent = Intent(this, MainActivity::class.java).apply {
                 // Room for putExtra()
             }
+            isReady = false
+            val users = MainActivity.DatabaseUtils.getDatabase(this)!!.userDao()
+            GlobalScope.launch {
+                val user = LoginActivity.CurrentUser.getCurrentUser()
+                users.updateUser(user.uid, user.username, user.email, user.password, user.picId, 0)
+                isReady = true
+            }
+            while (!isReady) {
+                // Stupidest shit ever to wait for database like this but it works :D
+            }
             startActivity(intent)
+        }
+
+        val setLocationButton: Button = findViewById(R.id.setLocation)
+        setLocationButton.setOnClickListener {
+            MapsFragment.CurrentLocation.initLocation(CoronaLocation.lat, CoronaLocation.long)
+            val mapFragment = MapsFragment()
+            // Custom listener for retrieving marker location
+            mapFragment.setOnLocationChangedListener(object :
+                MapsFragment.OnLocationChangedListener {
+                override fun onLocationChanged() {
+                    CoronaLocation.lat = MapsFragment.CurrentLocation.latitude
+                    CoronaLocation.long = MapsFragment.CurrentLocation.longitude
+                    (listView.adapter as ReminderAdapter).notifyDataSetChanged()
+                }
+            })
+            mapFragment.show(supportFragmentManager, "corona_location")
         }
 
         // Create AlertDialog for adding a new reminder
@@ -216,8 +247,6 @@ class MessageActivity : AppCompatActivity() {
         private val currentUser : MainActivity.User = LoginActivity.CurrentUser.getCurrentUser()
         private val chosenPfp = currentUser.picId
         var isChecked = false
-        var location_y = 65.0464
-        var location_x = 25.4317
 
         override fun getCount(): Int {
             return list.size
@@ -235,15 +264,43 @@ class MessageActivity : AppCompatActivity() {
             return list
         }
 
+        // Tries to imitate triggering a Geofence
+        private fun virtualGeofence(context: Context, reminder: Reminder) {
+            Log.d("Triggered", "Triggered")
+            Log.d("Triggered", reminder.reminder_time.toString())
+            Log.d("Triggered", System.currentTimeMillis().toString())
+            if (reminder.reminder_time < System.currentTimeMillis()) {
+                val intent = Intent(context, GeofenceReceiver::class.java).apply {
+                    // Room for putExtra()
+                    putExtra("tag", reminder.creation_time.toString())
+                    putExtra("time", reminder.reminder_time)
+                    putExtra("message", reminder.message)
+                    putExtra(
+                        "location",
+                        context.getString(
+                            R.string.location_format2,
+                            reminder.location_y,
+                            reminder.location_x
+                        )
+                    )
+                    putExtra("icon", reminder.icon)
+                }
+
+                PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT).send()
+            }
+        }
+
         override fun getView(p0: Int, p1: View?, p2: ViewGroup?): View {
             // Init views and set values from the reminder
             val reminder = list[p0]
 
             var results = FloatArray(5)
-            Location.distanceBetween(location_y, location_x, reminder.location_y, reminder.location_x, results)
+            Location.distanceBetween(CoronaLocation.lat, CoronaLocation.long, reminder.location_y, reminder.location_x, results)
 
-            if (!isChecked && (reminder.reminder_time > System.currentTimeMillis() || results[0] > 50)) {
+            if (!isChecked && (reminder.reminder_time > System.currentTimeMillis() || results[0] > 200)) {
                 return View(context)
+            } else if (reminder.reminder_time > System.currentTimeMillis() || results[0] < 200) {
+                virtualGeofence(context, reminder)
             }
             val view = layoutInflater.inflate(R.layout.reminder_item, p2, false)
             val icon: ImageView = view.findViewById(R.id.icon)
@@ -365,5 +422,10 @@ class MessageActivity : AppCompatActivity() {
             }
             return db
         }
+    }
+
+    object CoronaLocation {
+        var lat: Double = 65.0464
+        var long: Double = 25.4317
     }
 }

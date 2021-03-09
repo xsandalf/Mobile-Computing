@@ -10,6 +10,12 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import java.math.BigInteger
+import java.security.MessageDigest
+import java.security.SecureRandom
+import java.security.spec.MGF1ParameterSpec.SHA1
+import javax.crypto.SecretKeyFactory
+import javax.crypto.spec.PBEKeySpec
 
 class SignupActivity : AppCompatActivity() {
 
@@ -43,10 +49,9 @@ class SignupActivity : AppCompatActivity() {
                 if (db != null) {
                     val users = db.userDao()
                     GlobalScope.launch {
-                        // Implement password hashing later
                         if (users.findByUsername(userName) == null) {
                             if (users.findByEmail(signUpEmail.text.toString()) == null) {
-                                users.insertAll(MainActivity.User(0, userName, signUpEmail.text.toString(), signUpPassword.text.toString(),0))
+                                users.insertAll(MainActivity.User(0, userName, signUpEmail.text.toString(), hashPassword(signUpPassword.text.toString()),0, 0))
                                 isSuccess = true
                                 isReady = true
                             }
@@ -70,6 +75,14 @@ class SignupActivity : AppCompatActivity() {
                     Toast.makeText(this, "Username/email already in use", Toast.LENGTH_SHORT).show()
                 }
             }
+        }
+    }
+
+    companion object {
+        private val messageDigest = MessageDigest.getInstance("MD5")
+        fun hashPassword(password: String): String {
+            Log.d("HASH", BigInteger(1, messageDigest.digest(password.toByteArray())).toString(16).padStart(32, '0'))
+            return BigInteger(1, messageDigest.digest(password.toByteArray())).toString(16).padStart(32, '0')
         }
     }
 }

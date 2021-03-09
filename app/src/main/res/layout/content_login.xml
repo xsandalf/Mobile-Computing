@@ -34,7 +34,7 @@
             app:layout_constraintTop_toBottomOf="@id/loginName"
             android:inputType="textPassword"/>
 
-    <RadioButton
+    <CheckBox
             android:id="@+id/rememberMe"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -42,8 +42,7 @@
             android:layout_marginTop="24dp"
             app:layout_constraintLeft_toLeftOf="@id/loginPassword"
             app:layout_constraintRight_toRightOf="@id/loginPassword"
-            app:layout_constraintTop_toBottomOf="@id/loginPassword"
-            android:visibility="invisible"/>
+            app:layout_constraintTop_toBottomOf="@id/loginPassword"/>
 
     <Button
             android:id="@+id/logIn"
