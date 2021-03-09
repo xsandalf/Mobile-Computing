@@ -5,17 +5,13 @@ import android.os.Bundle
 import android.util.Log
 import android.widget.Button
 import android.widget.EditText
-import android.widget.RadioButton
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import java.math.BigInteger
 import java.security.MessageDigest
-import java.security.SecureRandom
-import java.security.spec.MGF1ParameterSpec.SHA1
-import javax.crypto.SecretKeyFactory
-import javax.crypto.spec.PBEKeySpec
+
 
 class SignupActivity : AppCompatActivity() {
 
@@ -40,48 +36,53 @@ class SignupActivity : AppCompatActivity() {
             // Change to login activity
             // Check if sign up name, email or password field is empty, not the best way to do this but good enough
             if (signUpUsername.text.toString() == "" || signUpEmail.text.toString() == "" || signUpPassword.text.toString() == "") {
-                Toast.makeText(this, "Please give username, email, and password", Toast.LENGTH_SHORT).show()
+                showToast("Please give username, email, and password")
             } else {
                 // Store new user to Database
-                var userName : String = signUpUsername.text.toString()
-                var isSuccess = false
-                var isReady = false
-                if (db != null) {
-                    val users = db.userDao()
-                    GlobalScope.launch {
-                        if (users.findByUsername(userName) == null) {
-                            if (users.findByEmail(signUpEmail.text.toString()) == null) {
-                                users.insertAll(MainActivity.User(0, userName, signUpEmail.text.toString(), hashPassword(signUpPassword.text.toString()),0, 0))
-                                isSuccess = true
-                                isReady = true
-                            }
-                        }
-                    }
-                }
-
-                while (!isReady) {
-                    // Stupidest shit ever to wait for database like this but it works :D
-                    Log.d("lol", "stuck")
-                }
+                val isSuccess = createNewUser(db!!, signUpUsername.text.toString(), signUpEmail.text.toString(), signUpPassword.text.toString())
 
                 if (isSuccess) {
-                    Toast.makeText(this, "User created", Toast.LENGTH_SHORT).show()
+                    showToast("User created")
                     val intent = Intent(this, LoginActivity::class.java).apply {
                         // Room for putExtra()
-                        putExtra("Username", userName)
+                        putExtra("Username", signUpUsername.text.toString())
                     }
                     startActivity(intent)
                 } else {
-                    Toast.makeText(this, "Username/email already in use", Toast.LENGTH_SHORT).show()
+                    showToast("Username/email already in use")
                 }
             }
         }
     }
 
+    private fun createNewUser(db: MainActivity.AppDatabase, userName: String, email: String, password: String): Boolean {
+        var isSuccess = false
+        var isReady = false
+        val users = db.userDao()
+        GlobalScope.launch {
+            if (users.findByUsername(userName) == null) {
+                if (users.findByEmail(email) == null) {
+                    users.insertAll(MainActivity.User(0, userName, email, hashPassword(password),0, 0))
+                    isSuccess = true
+                    isReady = true
+                }
+            }
+        }
+
+        while (!isReady) {
+            // Stupidest shit ever to wait for database like this but it works :D
+        }
+
+        return isSuccess
+    }
+
+    private fun showToast(text: String) {
+        Toast.makeText(this, text, Toast.LENGTH_SHORT).show()
+    }
+
     companion object {
         private val messageDigest = MessageDigest.getInstance("MD5")
         fun hashPassword(password: String): String {
-            Log.d("HASH", BigInteger(1, messageDigest.digest(password.toByteArray())).toString(16).padStart(32, '0'))
             return BigInteger(1, messageDigest.digest(password.toByteArray())).toString(16).padStart(32, '0')
         }
     }

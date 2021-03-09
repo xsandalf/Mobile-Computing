@@ -6,7 +6,6 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import android.util.Log
 import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -22,21 +21,44 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         // Create default user
-        var isReady = false
         val db = DatabaseUtils.getDatabase(this)
         val users = db?.userDao()
-        if (users != null) {
-            GlobalScope.launch {
-                if (users.findByUsername("root") == null) {
-                    users.insertAll(User(0, "root", "root", SignupActivity.hashPassword("root"), 0, 0))
-                }
-                isReady = true
+        createDefaultUser(users!!)
+
+        // Ask user for necessary permissions
+        askPermissions()
+
+        // Set onClickListeners for buttons
+        val logInButton : Button = findViewById(R.id.logIn)
+        logInButton.setOnClickListener {
+            val rememberMe = getUserRememberMe(users)
+            sendNewIntent(rememberMe)
+        }
+
+        val signUpButton : Button = findViewById(R.id.signUp)
+        signUpButton.setOnClickListener {
+            // Change to sign up activity
+            val intent = Intent(this, SignupActivity::class.java).apply {
+                // Room for putExtra()
             }
+            startActivity(intent)
+        }
+    }
+
+    private fun createDefaultUser(users: UserDao) {
+        var isReady = false
+        GlobalScope.launch {
+            if (users.findByUsername("root") == null) {
+                users.insertAll(User(0, "root", "root", SignupActivity.hashPassword("root"), 0, 0))
+            }
+            isReady = true
         }
         while (!isReady) {
             // Stupidest shit ever to wait for database like this but it works :D
         }
+    }
 
+    private fun askPermissions() {
         // I could chain all these together but it is hard to read, so I'm keeping them separate
         // I don't care if the user has to press allow multiple times
         // Ask Location permissions
@@ -62,57 +84,43 @@ class MainActivity : AppCompatActivity() {
         if (ContextCompat.checkSelfPermission(applicationContext, Manifest.permission.WRITE_CALENDAR) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.WRITE_CALENDAR), 1)
         }
+    }
 
-        // Set onClickListeners for buttons
-        val logInButton : Button = findViewById(R.id.logIn)
-        logInButton.setOnClickListener {
-            // Find if user has set RememberMe
-            isReady = false
-            var foundUser = false
-            Log.d("RememberMe1", (users == null).toString())
-            if (users != null) {
-                Log.d("RememberMe2", "Not Null")
-                GlobalScope.launch {
-                    val user = users.findRememberMe(1)
-                    if (user != null) {
-                        Log.d("RememberMe3", "Not Null")
-                        LoginActivity.CurrentUser.initUser(user)
-                        foundUser = true
-                    }
-                    isReady = true
-                }
+    private fun getUserRememberMe(users: UserDao): Boolean {
+        // Find if user has set RememberMe
+        var isReady = false
+        var foundUser = false
+        GlobalScope.launch {
+            val user = users.findRememberMe(1)
+            if (user != null) {
+                LoginActivity.CurrentUser.initUser(user)
+                foundUser = true
             }
-            while (!isReady) {
-                // Stupidest shit ever to wait for database like this but it works :D
-                Log.d("Stuck", "Stuck")
-            }
-            Log.d("RememberMe4", foundUser.toString())
-            lateinit var intent: Intent
-            if (foundUser) {
-                Log.d("RememberMe5", "Not Null")
-                // If user has set RememberMe, jump straight to MessageActivity
-                intent = Intent(this, MessageActivity::class.java)
-                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                intent.apply {
-                    // Room for putExtra()
-                }
-            } else {
-                // Change to login activity
-                intent = Intent(this, LoginActivity::class.java).apply {
-                    // Room for putExtra()
-                }
-            }
-            startActivity(intent)
+            isReady = true
         }
 
-        val signUpButton : Button = findViewById(R.id.signUp)
-        signUpButton.setOnClickListener {
-            // Change to sign up activity
-            val intent = Intent(this, SignupActivity::class.java).apply {
+        while (!isReady) {
+            // Stupidest shit ever to wait for database like this but it works :D
+        }
+        return foundUser
+    }
+
+    private fun sendNewIntent(foundUser: Boolean) {
+        lateinit var intent: Intent
+        if (foundUser) {
+            // If user has set RememberMe, jump straight to MessageActivity
+            intent = Intent(this, MessageActivity::class.java)
+            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            intent.apply {
                 // Room for putExtra()
             }
-            startActivity(intent)
+        } else {
+            // Change to login activity
+            intent = Intent(this, LoginActivity::class.java).apply {
+                // Room for putExtra()
+            }
         }
+        startActivity(intent)
     }
 
     @Entity

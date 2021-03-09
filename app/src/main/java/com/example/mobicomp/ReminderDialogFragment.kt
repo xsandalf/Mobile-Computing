@@ -12,7 +12,6 @@ import android.os.Bundle
 import android.os.Environment
 import android.provider.CalendarContract
 import android.provider.MediaStore
-import android.provider.SyncStateContract
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -27,7 +26,6 @@ import androidx.work.Data
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
-import com.google.android.gms.common.internal.Constants
 import com.google.android.gms.location.*
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -189,7 +187,6 @@ class ReminderDialogFragment : DialogFragment() {
                         editReminder.location_x
                     )
                 } else if (location != null) {
-                    Log.d("Location", "Called")
                     MapsFragment.CurrentLocation.initLocation(
                         location.latitude,
                         location.longitude
@@ -201,7 +198,6 @@ class ReminderDialogFragment : DialogFragment() {
                     )
                 // If location data is not available, use virtual location
                 } else {
-                    Log.d("Location", "Null")
                     MapsFragment.CurrentLocation.initLocation(MessageActivity.CoronaLocation.lat, MessageActivity.CoronaLocation.long)
                     locationText.text = getString(R.string.location_format, MessageActivity.CoronaLocation.lat, MessageActivity.CoronaLocation.long)
                 }
@@ -312,60 +308,18 @@ class ReminderDialogFragment : DialogFragment() {
                     }
 
                     // Store new reminder in to Room Database
-                    var isSuccess = false
-                    var isReady = false
                     val db = MessageActivity.ReminderUtils.getDatabase(requireContext())
-                    GlobalScope.launch {
-                        if (editable) {
-                            db?.reminderDAO()?.updateReminder(
-                                editReminder.uid,
-                                messageText.text.toString(),
-                                MapsFragment.CurrentLocation.longitude,
-                                MapsFragment.CurrentLocation.latitude,
-                                reminderTime,
-                                iconSpinner.selectedItemPosition,
-                                path,
-                                eventID
-                            )
-                        } else {
-                            db?.reminderDAO()?.insertAll(
-                                MessageActivity.Reminder(
-                                    0,
-                                    messageText.text.toString(),
-                                    MapsFragment.CurrentLocation.longitude,
-                                    MapsFragment.CurrentLocation.latitude,
-                                    reminderTime,
-                                    creationTime,
-                                    LoginActivity.CurrentUser.getCurrentUser().uid,
-                                    creationTime,
-                                    iconSpinner.selectedItemPosition,
-                                    path,
-                                    eventID
-                                )
-                            )
-                        }
-                        isReady = true
-                        isSuccess = true
-                    }
-
-                    while (!isReady) {
-                        // Stupidest shit ever to wait for database like this but it works :D
-                        Log.d("lol", "stuck")
-                    }
+                    val isSuccess = saveReminderToDB(db!!, messageText.text.toString(), reminderTime, creationTime, iconSpinner.selectedItemPosition, path, eventID)
 
                     if (isSuccess) {
                         if (editable) {
-                            Toast.makeText(requireContext(), "Reminder edited", Toast.LENGTH_SHORT).show()
+                            showToast("Reminder edited")
                         } else {
-                            Toast.makeText(requireContext(), "Reminder created", Toast.LENGTH_SHORT).show()
+                            showToast("Reminder created")
                         }
                         onReminderChangedListener.onReminderChanged()
                     } else {
-                        Toast.makeText(
-                            requireContext(),
-                            "Oops something went wrong",
-                            Toast.LENGTH_SHORT
-                        ).show()
+                        showToast("Oops something went wrong")
                     }
 
                 }
@@ -386,6 +340,57 @@ class ReminderDialogFragment : DialogFragment() {
             // Create the AlertDialog object and return it
             builder.create()
         } ?: throw IllegalStateException("Activity cannot be null")
+    }
+
+    private fun saveReminderToDB(db: MessageActivity.AppDatabase, message: String, reminderTime: Long, creationTime: Long, icon: Int, path: String?, eventID: Long?): Boolean {
+        var isSuccess = false
+        var isReady = false
+        GlobalScope.launch {
+            if (editable) {
+                db.reminderDAO().updateReminder(
+                    editReminder.uid,
+                    message,
+                    MapsFragment.CurrentLocation.longitude,
+                    MapsFragment.CurrentLocation.latitude,
+                    reminderTime,
+                    icon,
+                    path,
+                    eventID
+                )
+            } else {
+                db.reminderDAO().insertAll(
+                    MessageActivity.Reminder(
+                        0,
+                        message,
+                        MapsFragment.CurrentLocation.longitude,
+                        MapsFragment.CurrentLocation.latitude,
+                        reminderTime,
+                        creationTime,
+                        LoginActivity.CurrentUser.getCurrentUser().uid,
+                        creationTime,
+                        icon,
+                        path,
+                        eventID
+                    )
+                )
+            }
+            isReady = true
+            isSuccess = true
+        }
+
+        while (!isReady) {
+            // Stupidest shit ever to wait for database like this but it works :D
+        }
+
+        return isSuccess
+    }
+
+    private fun showToast(text: String) {
+        Toast.makeText(
+            requireContext(),
+            text,
+            Toast.LENGTH_SHORT
+        ).show()
     }
 
     // Default camera function provided by Google
@@ -475,9 +480,7 @@ class ReminderDialogFragment : DialogFragment() {
     private fun createCalendarEvent(id : Int, start : Long, title : String, location : String): Long? {
         val values = ContentValues().apply {
             put(CalendarContract.Events.DTSTART, start)
-            //put(CalendarContract.Events.DTEND, endMillis)
             put(CalendarContract.Events.TITLE, title)
-            //put(CalendarContract.Events.DESCRIPTION, "Group workout")
             put(CalendarContract.Events.CALENDAR_ID, id)
             put(CalendarContract.Events.EVENT_TIMEZONE, "Europe/Helsinki")
             put(CalendarContract.Events.DURATION, "+P1H")
@@ -494,10 +497,8 @@ class ReminderDialogFragment : DialogFragment() {
         val values = ContentValues().apply {
             put(CalendarContract.Events.DTSTART, reminder.reminder_time)
             put(CalendarContract.Events.TITLE, reminder.message)
-            //put(CalendarContract.Events.DESCRIPTION, "Group workout")
             put(CalendarContract.Events.CALENDAR_ID, id)
             put(CalendarContract.Events.EVENT_TIMEZONE, "Europe/Helsinki")
-            //put(CalendarContract.Events.DURATION, "+P1H")
             put(CalendarContract.Events.EVENT_LOCATION, requireContext().getString(R.string.location_format, reminder.location_y, reminder.location_x))
         }
         val updateUri: Uri = ContentUris.withAppendedId(

@@ -41,11 +41,7 @@ class LoginActivity : AppCompatActivity() {
             // Change to login activity
             // Check if login name or password field is empty, not the best way to do this but good enough
             if (loginName.text.toString().equals("") || loginPassword.text.toString().equals("")) {
-                Toast.makeText(
-                    this,
-                    "Please give both username/email and password",
-                    Toast.LENGTH_SHORT
-                ).show()
+                showIncompleteLoginToast()
             } else {
                 // Check from Database for valid login
                 if (db != null) {
@@ -61,77 +57,69 @@ class LoginActivity : AppCompatActivity() {
                     while (!isReady) {
                         // Stupidest shit ever to wait for database like this but it works :D
                     }
+
                     // null for invalid login, stupid but works
-                    // Clean up later
                     if (userName != null) {
                         if (userName!!.password == SignupActivity.hashPassword(loginPassword.text.toString())) {
-                            CurrentUser.initUser(userName!!)
-                            val intent = Intent(this, MessageActivity::class.java)
-                            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                            intent.apply {
-                                // Room for putExtra()
-                            }
-                            if (rememberMe.isChecked) {
-                                isReady = false
-                                GlobalScope.launch {
-                                    val user = users.findRememberMe(1)
-                                    if (user != null) {
-                                        users.updateUser(user.uid, user.username, user.email, user.password, user.picId, 0)
-                                    }
-                                    users.updateUser(userName!!.uid, userName!!.username, userName!!.email, userName!!.password, userName!!.picId, 1)
-                                    isReady = true
-                                }
-                                while (!isReady) {
-                                    // Stupidest shit ever to wait for database like this but it works :D
-                                }
-                            }
-                            startActivity(intent)
+                            sendNewLoginIntent(userName!!, rememberMe.isChecked, users)
                         } else {
-                            Toast.makeText(
-                                this,
-                                "Wrong login, try again1",
-                                Toast.LENGTH_SHORT
-                            ).show()
+                            showWrongLoginToast()
                         }
                     } else if (email != null) {
                         if (email!!.password == SignupActivity.hashPassword(loginPassword.text.toString())) {
-                            CurrentUser.initUser(email!!)
-                            val intent = Intent(this, MessageActivity::class.java)
-                            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                            intent.apply {
-                                // Room for putExtra()
-                            }
-                            if (rememberMe.isChecked) {
-                                isReady = false
-                                GlobalScope.launch {
-                                    val user = users.findRememberMe(1)
-                                    if (user != null) {
-                                        users.updateUser(user.uid, user.username, user.email, user.password, user.picId, 0)
-                                    }
-                                    users.updateUser(email!!.uid, email!!.username, email!!.email, email!!.password, email!!.picId, 1)
-                                    isReady = true
-                                }
-                                while (!isReady) {
-                                    // Stupidest shit ever to wait for database like this but it works :D
-                                }
-                            }
-                            startActivity(intent)
+                            sendNewLoginIntent(email!!, rememberMe.isChecked, users)
                         } else {
-                            Toast.makeText(
-                                this,
-                                "Wrong login, try again2",
-                                Toast.LENGTH_SHORT
-                            ).show()
+                            showWrongLoginToast()
                         }
                     } else {
-                        Toast.makeText(
-                            this,
-                            "Wrong login, try again3",
-                            Toast.LENGTH_SHORT
-                        ).show()
+                        showWrongLoginToast()
                     }
                 }
             }
+        }
+    }
+
+    private fun showIncompleteLoginToast() {
+        Toast.makeText(
+            this,
+            "Please give both username/email and password",
+            Toast.LENGTH_SHORT
+        ).show()
+    }
+
+    private fun showWrongLoginToast() {
+        Toast.makeText(
+            this,
+            "Wrong login, try again",
+            Toast.LENGTH_SHORT
+        ).show()
+    }
+
+    private fun sendNewLoginIntent(currentUser: MainActivity.User, isChecked: Boolean, users: MainActivity.UserDao) {
+        CurrentUser.initUser(currentUser)
+        val intent = Intent(this, MessageActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        intent.apply {
+            // Room for putExtra()
+        }
+        if (isChecked) {
+            updateRememberMe(users, currentUser)
+        }
+        startActivity(intent)
+    }
+
+    private fun updateRememberMe(users: MainActivity.UserDao, currentUser: MainActivity.User) {
+        var isReady = false
+        GlobalScope.launch {
+            val user = users.findRememberMe(1)
+            if (user != null) {
+                users.updateUser(user.uid, user.username, user.email, user.password, user.picId, 0)
+            }
+            users.updateUser(currentUser.uid, currentUser.username, currentUser.email, currentUser.password, currentUser.picId, 1)
+            isReady = true
+        }
+        while (!isReady) {
+            // Stupidest shit ever to wait for database like this but it works :D
         }
     }
 

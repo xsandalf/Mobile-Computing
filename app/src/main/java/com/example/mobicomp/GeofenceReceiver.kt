@@ -10,7 +10,6 @@ import com.google.android.gms.location.GeofencingEvent
 class GeofenceReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context?, intent: Intent?) {
-        Log.d("Triggered", "Triggered")
         if (context != null) {
             val geoEvent = GeofencingEvent.fromIntent(intent!!)
 

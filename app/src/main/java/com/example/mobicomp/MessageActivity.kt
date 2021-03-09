@@ -38,21 +38,12 @@ class MessageActivity : AppCompatActivity() {
         // Get reminders from Database
         val db = ReminderUtils.getDatabase(this)
         var isReady = false
-        var reminders : List<Reminder>? = null
-        GlobalScope.launch {
-            reminders = db?.reminderDAO()?.getAll()
-            isReady = true
-        }
-
-        while (!isReady) {
-            // Stupidest shit ever to wait for database like this but it works :D
-            Log.d("lol", "stuck")
-        }
+        var reminders : List<Reminder> = getReminders(db!!)
 
         listView = findViewById(R.id.message_list)
         this.registerForContextMenu(listView)
         listView.adapter = ReminderAdapter(this,
-            reminders?.toMutableList() as ArrayList<Reminder>
+            reminders.toMutableList() as ArrayList<Reminder>
         )
 
         showAll = findViewById(R.id.showAll)
@@ -67,12 +58,9 @@ class MessageActivity : AppCompatActivity() {
         fusedLocationClient.lastLocation.addOnSuccessListener { location: Location? ->
             // Real phone, might return null
             if (location != null) {
-                Log.d("Location", "Called")
                 CoronaLocation.lat = location.latitude
                 CoronaLocation.long = location.longitude
                 (listView.adapter as ReminderAdapter).notifyDataSetChanged()
-            } else {
-                Log.d("Location", "Null")
             }
         }
 
@@ -127,23 +115,11 @@ class MessageActivity : AppCompatActivity() {
             dialogFragment.setOnReminderChangedListener(object :
                 ReminderDialogFragment.OnReminderChangedListener {
                 override fun onReminderChanged() {
-                    isReady = false
-                    // Get reminders from Database
-                    GlobalScope.launch {
-                        reminders = db?.reminderDAO()?.getAll()
-                        isReady = true
-                    }
-
-                    while (!isReady) {
-                        // Stupidest shit ever to wait for database like this but it works :D
-                        Log.d("lol", "stuck")
-                    }
+                    // Get reminders from db
+                    reminders = getReminders(db!!)
 
                     // Refresh changed reminders to ListView Adapter
-                    val list : ArrayList<Reminder> = (listView.adapter as ReminderAdapter).getItems()
-                    list.clear()
-                    list.addAll(reminders!!)
-                    (listView.adapter as ReminderAdapter).notifyDataSetChanged()
+                    refreshListView(reminders!!)
                 }
             })
             dialogFragment.show(supportFragmentManager, "create_reminder")
@@ -176,59 +152,24 @@ class MessageActivity : AppCompatActivity() {
                 dialogFragment.setOnReminderChangedListener(object :
                     ReminderDialogFragment.OnReminderChangedListener {
                     override fun onReminderChanged() {
-                        var isReady = false
                         // Get reminders from Database
-                        GlobalScope.launch {
-                            reminders = db?.reminderDAO()?.getAll()!!
-                            isReady = true
-                        }
-
-                        while (!isReady) {
-                            // Stupidest shit ever to wait for database like this but it works :D
-                            Log.d("lol", "stuck")
-                        }
+                        reminders = getReminders(db!!)
 
                         // Refresh changed reminders to ListView Adapter
-                        val list: ArrayList<Reminder> =
-                            (listView.adapter as ReminderAdapter).getItems()
-                        list.clear()
-                        list.addAll(reminders)
-                        (listView.adapter as ReminderAdapter).notifyDataSetChanged()
+                        refreshListView(reminders)
                     }
                 })
                 dialogFragment.show(supportFragmentManager, "edit_reminder")
             } else if (item.title == getString(R.string.delete)) {
-                // Delete reminder
-                var isSuccess = false
-                var isReady = false
                 // Delete image used for the reminder
                 if (reminder.pic_path != null) {
                     File(reminder.pic_path).delete()
                 }
-                // Delete reminder and get reminders from Database
-                GlobalScope.launch {
-                    db?.reminderDAO()?.delete(reminder)
-                    reminders = db?.reminderDAO()?.getAll()!!
-                    isReady = true
-                    isSuccess = true
-                }
-
-                while (!isReady) {
-                    // Stupidest shit ever to wait for database like this but it works :D
-                    Log.d("lol", "stuck")
-                }
-
-                if (isSuccess) {
-                    Toast.makeText(this, "Reminder deleted", Toast.LENGTH_SHORT).show()
-                } else {
-                    Toast.makeText(this, "Oops something went wrong", Toast.LENGTH_SHORT).show()
-                }
+                // Delete reminder
+                reminders = deleteAndRefreshReminders(db!!, reminder)
 
                 // Refresh changed reminders to ListView Adapter
-                val list : ArrayList<Reminder> = (listView.adapter as ReminderAdapter).getItems()
-                list.clear()
-                list.addAll(reminders)
-                (listView.adapter as ReminderAdapter).notifyDataSetChanged()
+                refreshListView(reminders)
             }
         } else {
             return false
@@ -236,9 +177,50 @@ class MessageActivity : AppCompatActivity() {
         return true
     }
 
-    @JvmName("getShowAll1")
-    fun getShowAll(): Boolean {
-        return showAll.isChecked
+    private fun getReminders(db: AppDatabase): List<Reminder> {
+        var isReady = false
+        lateinit var reminders: List<Reminder>
+        // Get reminders from Database
+        GlobalScope.launch {
+            reminders = db?.reminderDAO()?.getAll()!!
+            isReady = true
+        }
+
+        while (!isReady) {
+            // Stupidest shit ever to wait for database like this but it works :D
+        }
+
+        return reminders
+    }
+
+    private fun deleteAndRefreshReminders(db: AppDatabase, reminder: Reminder): List<Reminder> {
+        var isSuccess = false
+        var isReady = false
+        lateinit var reminders: List<Reminder>
+        GlobalScope.launch {
+            db.reminderDAO().delete(reminder)
+            reminders = db.reminderDAO().getAll()
+            isReady = true
+            isSuccess = true
+        }
+
+        while (!isReady) {
+            // Stupidest shit ever to wait for database like this but it works :D
+        }
+
+        if (isSuccess) {
+            Toast.makeText(this, "Reminder deleted", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(this, "Oops something went wrong", Toast.LENGTH_SHORT).show()
+        }
+        return reminders
+    }
+
+    private fun refreshListView(reminders: List<Reminder>) {
+        val list : ArrayList<Reminder> = (listView.adapter as ReminderAdapter).getItems()
+        list.clear()
+        list.addAll(reminders)
+        (listView.adapter as ReminderAdapter).notifyDataSetChanged()
     }
 
     class ReminderAdapter(val context: Context, private val list: ArrayList<Reminder>) : BaseAdapter() {
@@ -266,9 +248,6 @@ class MessageActivity : AppCompatActivity() {
 
         // Tries to imitate triggering a Geofence
         private fun virtualGeofence(context: Context, reminder: Reminder) {
-            Log.d("Triggered", "Triggered")
-            Log.d("Triggered", reminder.reminder_time.toString())
-            Log.d("Triggered", System.currentTimeMillis().toString())
             if (reminder.reminder_time < System.currentTimeMillis()) {
                 val intent = Intent(context, GeofenceReceiver::class.java).apply {
                     // Room for putExtra()
@@ -329,36 +308,6 @@ class MessageActivity : AppCompatActivity() {
             location.text = context.getString(R.string.location_format2, reminder.location_y, reminder.location_x)
 
             return view
-        }
-
-        // Default function from Google to downscale an image
-        private fun setPic(imageView: ImageView, filePath: String) {
-            // Get the dimensions of the View
-            val targetW: Int = imageView.width
-            val targetH: Int = imageView.height
-
-            val bmOptions = BitmapFactory.Options().apply {
-                // Get the dimensions of the bitmap
-                inJustDecodeBounds = true
-
-                BitmapFactory.decodeFile(filePath)
-
-                val photoW: Int = outWidth
-                val photoH: Int = outHeight
-                Log.d("lol", targetH.toString())
-                Log.d("lol", targetW.toString())
-                // Determine how much to scale down the image
-                val scaleFactor: Int = Math.max(1, Math.min(photoW / targetW, photoH / targetH))
-
-                // Decode the image file into a Bitmap sized to fill the View
-                inJustDecodeBounds = false
-                inSampleSize = scaleFactor
-                inPurgeable = true
-            }
-            BitmapFactory.decodeFile(filePath, bmOptions)?.also { bitmap ->
-                imageView.setImageBitmap(bitmap)
-            }
-
         }
     }
 

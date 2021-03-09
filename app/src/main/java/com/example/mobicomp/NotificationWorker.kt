@@ -45,5 +45,4 @@ class NotificationWorker (appContext: Context, workerParams: WorkerParameters):
 
         return Result.success()
     }
-
 }

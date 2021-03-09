@@ -30,7 +30,7 @@ class ProfileActivity : AppCompatActivity() {
         // Initiate views
         // View Binding might be better but I'm old school Java man:D
         val profilePic : ImageView = findViewById(R.id.profilePic)
-        var profilePics = resources.obtainTypedArray(R.array.profile_pics)
+        val profilePics = resources.obtainTypedArray(R.array.profile_pics)
         profilePic.setImageDrawable(ContextCompat.getDrawable(this, profilePics.getResourceId(chosenPfp, 0)))
         profilePics.recycle()
         val profileUsername : EditText = findViewById(R.id.profileUsername)
@@ -85,35 +85,15 @@ class ProfileActivity : AppCompatActivity() {
             pfpChoice5
         )
 
-        for (pic in pfpViews) {
-            pic.setOnClickListener {
-                pfpViews[chosenPfp].imageAlpha = 255
-                chosenPfp = pic.getTag().toString().toInt()
-                pic.imageAlpha = 100
-            }
-        }
+        setPfpOnClickListeners(pfpViews)
 
         // Set onClickListeners for buttons
         // Switch to edit mode
         val editProfileButton: Button = findViewById(R.id.editProfile)
         editProfileButton.setOnClickListener {
             // Change to edit mode
-            for (view in hiddenViews) {
-                view.visibility = View.VISIBLE
-            }
-            for (view in hiddenEditViews) {
-                view.setText("")
-            }
-            profilePic.visibility = View.INVISIBLE
-            profileUsername.inputType = InputType.TYPE_CLASS_TEXT
-            profileUsername.isEnabled = true
-            profileEmail.inputType = InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS
-            profileEmail.isEnabled = true
-            editProfileButton.visibility = View.GONE
-            for (pic in pfpViews) {
-                pic.imageAlpha = 255
-            }
-            pfpViews[chosenPfp].imageAlpha = 100
+            changeHiddenViewVisibility(hiddenViews, View.VISIBLE, hiddenEditViews)
+            changeToEditMode(profilePic, profileUsername, profileEmail, editProfileButton, pfpViews)
         }
 
         // Save changes
@@ -125,37 +105,15 @@ class ProfileActivity : AppCompatActivity() {
             if (db != null) {
                 GlobalScope.launch {
                     if (oldProfilePassword.text.toString() == "" && newProfilePassword.text.toString() == "" && confirmProfilePassword.text.toString() == "") {
-                        if (users != null) {
-                            users.updateUser(
-                                currentUser.uid,
-                                profileUsername.text.toString(),
-                                profileEmail.text.toString(),
-                                currentUser.password,
-                                chosenPfp,
-                                currentUser.rememberMe
-                            )
-                            currentUser = users.findByUid(currentUser.uid)
-                            LoginActivity.CurrentUser.updateUser(currentUser)
-                            isSuccess = true
-                            isReady = true
-                        }
-                    } else if (SignupActivity.hashPassword(oldProfilePassword.text.toString()) == currentUser.password
-                        && newProfilePassword.text.toString() == confirmProfilePassword.text.toString()
-                        && confirmProfilePassword.text.toString() != "") {
-                        if (users != null) {
-                            users.updateUser(
-                                currentUser.uid,
-                                profileUsername.text.toString(),
-                                profileEmail.text.toString(),
-                                SignupActivity.hashPassword(confirmProfilePassword.text.toString()),
-                                chosenPfp,
-                                0
-                            )
-                            currentUser = users.findByUid(currentUser.uid)
-                            LoginActivity.CurrentUser.updateUser(currentUser)
-                            isSuccess = true
-                            isReady = true
-                        }
+                        currentUser = updateUserNoPassword(users!!, currentUser, profileUsername.text.toString(), profileEmail.text.toString())
+                        LoginActivity.CurrentUser.updateUser(currentUser)
+                        isSuccess = true
+                        isReady = true
+                    } else if (getPasswordsMatch(currentUser, oldProfilePassword.text.toString(), newProfilePassword.text.toString(), confirmProfilePassword.text.toString())) {
+                        currentUser = updateUserPassword(users!!, currentUser, profileUsername.text.toString(), profileEmail.text.toString(), confirmProfilePassword.text.toString())
+                        LoginActivity.CurrentUser.updateUser(currentUser)
+                        isSuccess = true
+                        isReady = true
                     } else {
                         isSuccess = false
                         isReady = true
@@ -166,33 +124,12 @@ class ProfileActivity : AppCompatActivity() {
                 // Stupidest shit ever to wait for database like this but it works :D
             }
             if (isSuccess) {
-                Toast.makeText(
-                    this,
-                    "Saved changes",
-                    Toast.LENGTH_SHORT
-                ).show()
+                showToast("Saved changes")
                 // Change to profile mode
-                for (view in hiddenViews) {
-                    view.visibility = View.INVISIBLE
-                }
-                for (view in hiddenEditViews) {
-                    view.setText("")
-                }
-                profilePic.visibility = View.VISIBLE
-                profileUsername.inputType = InputType.TYPE_NULL
-                profileUsername.isEnabled = false
-                profileEmail.inputType = InputType.TYPE_NULL
-                profileEmail.isEnabled = false
-                editProfileButton.visibility = View.VISIBLE
-                profilePics = resources.obtainTypedArray(R.array.profile_pics)
-                profilePic.setImageDrawable(ContextCompat.getDrawable(this, profilePics.getResourceId(chosenPfp, 0)))
-                profilePics.recycle()
+                changeHiddenViewVisibility(hiddenViews, View.INVISIBLE, hiddenEditViews)
+                changeToProfileMode(profilePic, profileUsername, profileEmail, editProfileButton)
             } else {
-                Toast.makeText(
-                    this,
-                    "Password error, cancelling changes",
-                    Toast.LENGTH_SHORT
-                ).show()
+                showToast("Password error, cancelling changes")
             }
         }
 
@@ -212,5 +149,87 @@ class ProfileActivity : AppCompatActivity() {
             profileEmail.isEnabled = false
             editProfileButton.visibility = View.VISIBLE
         }
+    }
+
+    private fun setPfpOnClickListeners(pfpViews: Array<ImageView>) {
+        for (pic in pfpViews) {
+            pic.setOnClickListener {
+                pfpViews[chosenPfp].imageAlpha = 255
+                chosenPfp = pic.getTag().toString().toInt()
+                pic.imageAlpha = 100
+            }
+        }
+    }
+
+    private fun changeHiddenViewVisibility(hiddenViews: Array<View>, visibility: Int, hiddenEditViews: Array<EditText>) {
+        for (view in hiddenViews) {
+            view.visibility = visibility
+        }
+        for (view in hiddenEditViews) {
+            view.setText("")
+        }
+    }
+
+    private fun getPasswordsMatch(currentUser: MainActivity.User, oldPassword: String, newPassword: String, confirmPassword: String): Boolean {
+        return SignupActivity.hashPassword(oldPassword) == currentUser.password && newPassword == confirmPassword && confirmPassword != ""
+    }
+
+    private fun updateUserNoPassword(users: MainActivity.UserDao, currentUser: MainActivity.User, username: String, email: String): MainActivity.User {
+        users.updateUser(
+            currentUser.uid,
+            username,
+            email,
+            currentUser.password,
+            chosenPfp,
+            currentUser.rememberMe
+        )
+
+        return users.findByUid(currentUser.uid)
+    }
+
+    private fun updateUserPassword(users: MainActivity.UserDao, currentUser: MainActivity.User, username: String, email: String, password: String): MainActivity.User {
+        users.updateUser(
+            currentUser.uid,
+            username,
+            email,
+            SignupActivity.hashPassword(password),
+            chosenPfp,
+            0
+        )
+
+        return users.findByUid(currentUser.uid)
+    }
+
+    private fun changeToEditMode(profilePic: ImageView, profileUsername: EditText, profileEmail: EditText, editProfileButton: Button, pfpViews: Array<ImageView>) {
+        profilePic.visibility = View.INVISIBLE
+        profileUsername.inputType = InputType.TYPE_CLASS_TEXT
+        profileUsername.isEnabled = true
+        profileEmail.inputType = InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS
+        profileEmail.isEnabled = true
+        editProfileButton.visibility = View.GONE
+        for (pic in pfpViews) {
+            pic.imageAlpha = 255
+        }
+        pfpViews[chosenPfp].imageAlpha = 100
+    }
+
+    private fun changeToProfileMode(profilePic: ImageView, profileUsername: EditText, profileEmail: EditText, editProfileButton: Button) {
+        profilePic.visibility = View.VISIBLE
+        profileUsername.inputType = InputType.TYPE_NULL
+        profileUsername.isEnabled = false
+        profileEmail.inputType = InputType.TYPE_NULL
+        profileEmail.isEnabled = false
+        editProfileButton.visibility = View.VISIBLE
+        val profilePics = resources.obtainTypedArray(R.array.profile_pics)
+        profilePic.setImageDrawable(ContextCompat.getDrawable(this, profilePics.getResourceId(chosenPfp, 0)))
+        profilePics.recycle()
+    }
+
+    private fun showToast(text: String) {
+        Toast.makeText(
+            this,
+            text,
+            Toast.LENGTH_SHORT
+        ).show()
     }
 }
